@@ -2,12 +2,25 @@ cmake_minimum_required(VERSION 3.15)
 
 project(OpenVR-Dynamic-Resolution)
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
-
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-find_package(fmt CONFIG REQUIRED)
-find_library(OPENVR_LIB openvr_api)
+include(FetchContent)
+
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt
+  GIT_TAG        10.0.0
+)
+FetchContent_MakeAvailable(fmt)
+FetchContent_Declare(openvr_api
+  GIT_REPOSITORY https://github.com/ValveSoftware/openvr.git
+  GIT_TAG v1.23.7
+)
+FetchContent_MakeAvailable(openvr_api)
+
+set(OPENVR_DIR "${FETCHCONTENT_BASE_DIR}/openvr-src")
+set(OPENVR_INCLUDE_DIR "${OPENVR_DIR}/headers")
+include_directories("${OPENVR_INCLUDE_DIR}")
 
 set(protos_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protos)
 file(MAKE_DIRECTORY "${protos_OUTPUT_DIR}")
@@ -20,7 +33,7 @@ set(CMAKE_INSTALL_RPATH $ORIGIN)
 
 # Project
 add_executable("${PROJECT_NAME}" "src/main.cpp" "src/pathtools_excerpt.cpp" "src/setup.cpp")
-target_link_libraries("${PROJECT_NAME}" PRIVATE "${OPENVR_LIB}" fmt::fmt)
+target_link_libraries("${PROJECT_NAME}" PRIVATE openvr_api fmt::fmt)
 target_include_directories("${PROJECT_NAME}" PUBLIC ${protos_OUTPUT_DIR} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_features("${PROJECT_NAME}" PRIVATE cxx_std_17)
 
@@ -41,8 +54,8 @@ install(FILES "${PROJECT_SOURCE_DIR}/manifest.vrmanifest"
     DESTINATION "."
 )
 
-set(VCPKG_BINARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin")
-install(FILES "${VCPKG_BINARIES}/openvr_api.dll" "${VCPKG_BINARIES}/fmt.dll" DESTINATION ".")
+#set(VCPKG_BINARIES "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin")
+#install(FILES "${VCPKG_BINARIES}/openvr_api.dll" "${VCPKG_BINARIES}/fmt.dll" DESTINATION ".")
 
 install(TARGETS "${PROJECT_NAME}"
     RUNTIME
